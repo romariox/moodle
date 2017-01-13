@@ -3090,8 +3090,9 @@ class curl {
                 $this->responsefinished = false;
                 $this->response = array();
             }
-            list($key, $value) = explode(" ", rtrim($header, "\r\n"), 2);
-            $key = rtrim($key, ':');
+            $parts = explode(" ", rtrim($header, "\r\n"), 2);
+            $key = rtrim($parts[0], ':');
+            $value = isset($parts[1]) ? $parts[1] : null;
             if (!empty($this->response[$key])) {
                 if (is_array($this->response[$key])) {
                     $this->response[$key][] = $value;
@@ -4301,6 +4302,14 @@ function file_pluginfile($relativepath, $forcedownload, $preview = null) {
             if ($CFG->forcelogin) {
                 // no login necessary - unless login forced everywhere
                 require_login();
+            }
+
+            // Check if user can view this category.
+            if (!has_capability('moodle/category:viewhiddencategories', $context)) {
+                $coursecatvisible = $DB->get_field('course_categories', 'visible', array('id' => $context->instanceid));
+                if (!$coursecatvisible) {
+                    send_file_not_found();
+                }
             }
 
             $filename = array_pop($args);
